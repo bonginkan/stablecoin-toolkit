@@ -33,6 +33,7 @@ Built on learnings from real stablecoin deployments. Production-grade Solidity c
 - **Compliance module** — KYC status per address, geography-based transfer restrictions, transaction limits; flow diagrams in [`docs/compliance-module.md`](docs/compliance-module.md)
 - **Minting gateway** — compliance-checked minting, redemption queue, fee management
 - **Burn toll extension** — optional mint/redeem hook that routes configurable toll revenue to a floor-pool adapter for governance-token buy-and-burn execution
+- **Lucidly reserve adapter** — parks excess liquid reserve into a syUSD-style vault with liquid-buffer rebalancing
 - **Depeg defence** — `DepegGuard` state machine monitors the collateral price feed and pauses mints / stablecoin on threshold breaches; see [`docs/depeg-guard.md`](docs/depeg-guard.md)
 - **Multi-geography** — configurable per jurisdiction (see `config/geographies/`)
 - **Deployment scripts** — India, Singapore, and UAE deployment plans with jurisdiction-specific compliance limits; see [`docs/multi-geography-deployments.md`](docs/multi-geography-deployments.md)
@@ -147,6 +148,7 @@ config/geographies/
 | `ComplianceModule.sol` | KYC, geography restrictions, transaction limits |
 | `Minter.sol` | Gateway — compliance + reserve checks before mint/redeem |
 | `extensions/BurnToll.sol` | Optional 0.5% default mint/redeem toll routed to a floor-pool buy-and-burn adapter. Spec: [`docs/burn-toll.md`](docs/burn-toll.md) |
+| `extensions/LucidlyAdapter.sol` | Lucidly syUSD-style reserve parking adapter with configurable liquid buffer |
 | `DepegGuard.sol` | Depeg-defence watchdog — Normal/Caution/Hard state machine, pauses mints + stablecoin on threshold breaches. Spec: [`docs/depeg-guard.md`](docs/depeg-guard.md) |
 | `ChainlinkPoRAdapter.sol` | Adapter for Chainlink Proof of Reserves feeds |
 
@@ -155,6 +157,10 @@ config/geographies/
 - Forge tests live under `forge-test/` and are wired through `foundry.toml`, so plain `forge test` works after `npm install`.
 - `lib/forge-std` is already vendored for the test harness; no extra `forge install` step is needed for a normal local checkout.
 - If `forge` is installed outside your shell `PATH`, invoke it with your local Foundry bin path or add that directory to `PATH` first.
+
+## Lucidly Reserve Parking
+
+`LucidlyAdapter` keeps a configurable reserve buffer liquid while parking excess USDC-style reserve assets into a Lucidly syUSD-style vault. Operators call `rebalance()` to park excess reserve, `unpark(amount)` before redemptions that exceed the liquid buffer, and `harvestYield()` on an epoch cadence to report accrued yield. Tests use `MockLucidlyVault`; production deployments should wire the final Lucidly interface for the target chain.
 
 ## Contributing
 
